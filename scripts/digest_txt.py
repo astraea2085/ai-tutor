@@ -75,9 +75,9 @@ def process_file(input_path, output_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="AI Tutor: Parse raw TXT materials into JSON chunks for Socratic teaching.")
-    parser.add_argument('--raw-dir', type=str, default="/Users/astraea/.openclaw/workspace/knowledge/ai-tutor/raw", 
+    parser.add_argument('--raw-dir', type=str, default=os.path.expanduser("~/.openclaw/workspace/knowledge/ai-tutor/raw"), 
                         help="Directory containing raw .txt files")
-    parser.add_argument('--out-dir', type=str, default="/Users/astraea/.openclaw/workspace/knowledge/ai-tutor/materials", 
+    parser.add_argument('--out-dir', type=str, default=os.path.expanduser("~/.openclaw/workspace/knowledge/ai-tutor/materials"), 
                         help="Directory to save the parsed .json files")
     
     args = parser.parse_args()
