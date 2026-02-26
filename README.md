@@ -15,7 +15,8 @@
 2. **读写分离与状态机并行**：不在一次会话中硬塞几十万字上下文。通过本地 `ai-tutor-state.json` 存档，支持**多门课程并行学习**，AI 每次只读取当前进度（Chunk）进行讲解。
 3. **沉浸式伴读与复习双模式**：
    - **讲课模式 (`开始上课`)**：把知识点掰开揉碎详细讲给你听。
-   - **复习模式 (`开始复习/抽查我`)**：不废话，直接从当前知识点里提炼问题考你。答错自动打入艾宾浩斯复习单（需配合 Ebbinghaus 插件）。
+   - **复习模式 (`开始复习/抽查我`)**：不废话，直接从当前知识点里提炼问题考你。答错自动打入内置的复习错题本 (Review Queue)。
+   - **监督与考核 (`生成今日报告`)**：结合 OpenClaw 定时任务，实时监控学情，防走神打断，并在结束时根据当天推进的进度生成“班主任式”的日结评价。
 
 ## 🚀 安装部署 
 
@@ -34,47 +35,39 @@ mkdir -p ~/.openclaw/workspace/knowledge/ai-tutor/raw
 mkdir -p ~/.openclaw/workspace/knowledge/ai-tutor/materials
 ```
 
-### 3. 初始化状态机 (State Machine)
-在你的 OpenClaw 记忆体中创建一个初始存档文件：
-```bash
-cat << EOF > ~/.openclaw/workspace/memory/ai-tutor-state.json
-{
-  "active_course": "",
-  "courses": {}
-}
-EOF
-```
-
 ## 📚 使用流程
 
-### 第一步：扔进课件并切块
+### 第一步：扔进课件
 1. 把你想要学习或复习的纯文本本子（比如法考民法典讲义、B站网课提取的字幕），保存为 `.txt` 文件（比如 `contract_law.txt`）。
 2. 把这个 `contract_law.txt` 拖到 `~/.openclaw/workspace/knowledge/ai-tutor/raw/` 文件夹里。
-3. 运行项目自带的免费切块脚本：
+
+### 第二步：一键切块与注册
+运行项目自带的免费切块脚本，它会进行**重叠语义切片**（保证上下文连贯），并**全自动将课程注册到你的记忆存档中**：
 ```bash
 python3 ~/.openclaw/workspace/skills/ai-tutor/scripts/digest_txt.py
 ```
-*(脚本会自动把它切成几百字一段的语意小薄片，并存入 `materials/contract_law.json`)*
-
-### 第二步：在 `state.json` 激活课程
-打开 `~/.openclaw/workspace/memory/ai-tutor-state.json`，把你想上的课（文件名）写进 `active_course`：
-```json
-{
-  "active_course": "contract_law",
-  "courses": {
-    "contract_law": {
-      "current_chunk": 0,
-      "total_chunks": 50,
-      "last_interaction": ""
-    }
-  }
-}
-```
+*(脚本执行后，你的 `~/.openclaw/workspace/memory/ai-tutor-state.json` 就会自动创建，并把这门新课设为当前活动课程。)*
 
 ### 第三步：去聊天软件里呼叫龙虾（老师）！
 打开你的 Discord/Telegram：
 - 发送：**“开始上课”** -> 老师会非常负责地把教材掰开揉碎讲给你听，必须听懂才放行。
 - 发送：**“开始复习”/“抽查我”** -> 老师一上来就会拷问你考点，答错就记入小本本。
+- 发送：**“结束学习”/“今日总结”** -> 老师会根据 `state.json` 结算你今天推进的进度，生成带有人设情绪的班主任评语。
+
+> **💡 高级用法 (防走神 Cron)**：你可以在 OpenClaw 的 `cron/jobs.json` 中配制定时任务，让机器人每隔 15 分钟检查一次进度。如果发现你没回复，它会主动在 Discord 里敲你：“同学走神了吗？”
+
+### 💬 授课效果演示 (Demo)
+
+**用户 (Discord):** 开始上课
+**🦞 AI 教练:**
+“同学你好！我们现在开始上《合同法》的第一课。第一部分主要讲’要约与要约邀请的区别‘。
+要约是希望和他人订立合同的意思表示，一旦对方承诺，合同就成立。而要约邀请只是希望别人向自己发出要约。
+咱们举个例子，超市货架上标了价格的商品，你觉得它是要约还是要约邀请？
+这部分听懂了吗？回答我刚才的问题，或者回复 1 我们继续往下讲。”
+**用户 (Discord):** 是要约邀请吧？
+**🦞 AI 教练:**
+“错啦！要注意，超市货架上明码标价的商品，因为它包含了合同的主要条款（商品+价格），且表明了只要你拿去结账它就得卖给你，所以它在法律上属于**要约**。而街边发的传单广告，一般才是要约邀请。
+我已经把这个知识点记在你的复习单里了。懂了吗？回复 1 我们看下一个知识点。”
 
 ## 🎭 自定义你的人设 (Persona)
 作为一个开源底座，你可以在你的 OpenClaw Agent 设置中赋予它任何性格！
